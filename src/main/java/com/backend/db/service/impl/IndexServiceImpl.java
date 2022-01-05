@@ -6,7 +6,9 @@ package com.backend.db.service.impl;
 import com.backend.db.algo.BookIndex;
 import com.backend.db.algo.KMP;
 import com.backend.db.algo.RegEx;
+import com.backend.db.bean.Book;
 import com.backend.db.bean.Index;
+import com.backend.db.bean.Jaccard;
 import com.backend.db.mapper.IndexMapper;
 import com.backend.db.service.IndexService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -15,12 +17,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 public class IndexServiceImpl  extends ServiceImpl<IndexMapper, Index> implements IndexService {
 
     @Autowired
     IndexMapper indexMapper;
+
+
+    private ExecutorService executor = Executors.newCachedThreadPool();
 
     public Boolean saveIndex(Index index){
         Boolean b = saveOrUpdate(index);
@@ -103,4 +112,42 @@ public class IndexServiceImpl  extends ServiceImpl<IndexMapper, Index> implement
         return indexs;
 
     }
+
+    public Future<Boolean> trans(String text,Integer id){
+        return executor.submit(() -> {
+            System.out.println("index: "+ id);
+            Map<String,Integer> map = BookIndex.Trans_Index(text);
+            List<Index> res = new ArrayList<>();
+            for(String word:map.keySet()){
+                Index index = new Index();
+                index.setBookid(id);
+                index.setCpt(map.get(word));
+                index.setWord(word);
+                boolean b = saveIndex(index);
+                if(b == false){
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+
+
+
+    public Boolean trans_index_multithead(List<Book> books) throws ExecutionException, InterruptedException{
+        List<Future<Boolean>> futures = new ArrayList<>();
+        for(Book book: books){
+            Future<Boolean> future = trans(book.getContents(), book.getId());
+            futures.add(future);
+        }
+
+        for(Future<Boolean> f: futures){
+            if(f.get() == false){
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

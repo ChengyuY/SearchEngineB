@@ -4,6 +4,7 @@ import com.backend.db.bean.Book;
 import com.backend.db.bean.Index;
 import com.backend.db.service.impl.BookServiceImpl;
 import com.backend.db.service.impl.IndexServiceImpl;
+import com.backend.db.service.impl.JaccardServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.validation.annotation.Validated;
@@ -21,79 +22,39 @@ public class BookController {
 
     int NB_book = 5;
 
+
     @Autowired
     BookServiceImpl bookService;
-
-
     @Autowired
     IndexServiceImpl indexService;
+
+    @Autowired
+    JaccardServiceImpl jaccardService;
 
 
     @ResponseBody
     @PostMapping("/library/load")
     public Boolean load(){
-        int nb = NB_book;
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.getMessageConverters().set(1,new StringHttpMessageConverter(StandardCharsets.UTF_8));
-
-        List<Book> books = new ArrayList<>();
-        int i = 100;
-        while(nb>0){
-            System.out.println(i);
-            String s = "https://www.gutenberg.org/files/"+i+"/"+i+"-0.txt";
-            String res = null;
-            try {
-                res = restTemplate.getForObject(s, String.class);
-            }catch (Exception e){
-                i++;
-                continue;
-            }
-            String title = null;
-            String author = null;
-            Integer id = null;
-
-            Scanner scan = new Scanner(res);
-            while(scan.hasNextLine()){
-                String courant = scan.nextLine();
-                if(courant.matches("^Title: .*")){
-                    title = courant.substring(6).trim();
-                }
-                if(courant.matches("^Author: .*")){
-                    author = courant.substring(7).trim();
-                }
-                if(courant.matches("^Release Date: .*")){
-                    String t = courant.split("#")[1];
-                    String t2 = t.substring(0,t.length()-1);
-                    id = Integer.valueOf(t2);
-                }
-                if(courant.matches("Contents")){
-                    break;
-                }
-            }
-            StringBuilder contents = new StringBuilder();
-            while(scan.hasNextLine()){
-                contents.append(scan.nextLine()+"\n");
-            }
-            if(id == null && title == null && author ==null){
-                return false;
-            }
-            Book b = new Book();
-            b.setTitle(title);
-            b.setAuthor(author);
-            b.setId(id);
-            b.setContents(contents.toString());
-            books.add(b);
-
-            List<Index> indexs = indexService.trans_index(contents.toString(),id);
-            for(Index index:indexs){
-                indexService.saveIndex(index);
-            }
-
-            i++;
-            nb--;
+        Boolean b = bookService.load(5);
+        if(b == false){
+            return  false;
         }
-        for(Book book:books){
-            bookService.saveBook(book);
+
+        try{
+            indexService.trans_index_multithead(bookService.list());
+        }catch (Exception e){
+            return  false;
+        }
+        return true;
+    }
+
+    @ResponseBody
+    @PostMapping("/library/loadgraph")
+    public Boolean loadgraph(){
+        try{
+            jaccardService.loadJaccard(indexService.list(),bookService.books_id());
+        }catch (Exception e){
+            return false;
         }
         return true;
     }
