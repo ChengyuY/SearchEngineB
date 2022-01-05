@@ -40,20 +40,6 @@ public class IndexServiceImpl  extends ServiceImpl<IndexMapper, Index> implement
     }
 
 
-
-    public List<Index> trans_index(String text,Integer id){
-        Map<String,Integer> map = BookIndex.Trans_Index(text);
-        List<Index> res = new ArrayList<>();
-        for(String word:map.keySet()){
-            Index index = new Index();
-            index.setBookid(id);
-            index.setCpt(map.get(word));
-            index.setWord(word);
-            res.add(index);
-        }
-        return res;
-    }
-
     public List<Integer> search_par_mot_cle(String word){
         String word1 = word.toLowerCase();
         QueryWrapper<Index> queryWrapper = new QueryWrapper<>();
@@ -131,7 +117,6 @@ public class IndexServiceImpl  extends ServiceImpl<IndexMapper, Index> implement
             return true;
         });
     }
-
 
 
 

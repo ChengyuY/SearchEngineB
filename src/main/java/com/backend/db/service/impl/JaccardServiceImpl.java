@@ -62,21 +62,6 @@ public class JaccardServiceImpl extends ServiceImpl<JaccardMapper, Jaccard> impl
 
         for(int i = 0 ; i < nb-1; i++){
             for(int j = i+1; j < nb ; j++){
-//                List<Index> i1 = indexs_by_id.get(i);
-//                List<Index> i2 = indexs_by_id.get(j);
-//                Set<String> str = new HashSet<>();
-//                for(int k = 0; k < i1.size();k++){
-//                    str.add(i1.get(k).getWord());
-//                }
-//                for(int k = 0; k < i2.size();k++){
-//                    str.add(i2.get(k).getWord());
-//                }
-//                double distance = jaccard_distance(str,i1,i2);
-//                Jaccard jac = new Jaccard();
-//                jac.setBook1(idbooks.get(i));
-//                jac.setBook2(idbooks.get(j));
-//                jac.setDistance(distance);
-//                saveOrUpdate(jac);
                   Future<Boolean> future = calculate(i,j,indexs_by_id,idbooks);
                   futures.add(future);
             }
