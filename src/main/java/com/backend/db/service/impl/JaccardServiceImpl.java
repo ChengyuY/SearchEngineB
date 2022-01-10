@@ -5,6 +5,7 @@ package com.backend.db.service.impl;
 
 
 import com.backend.db.bean.Book;
+import com.backend.db.bean.Classment;
 import com.backend.db.bean.Index;
 import com.backend.db.bean.Jaccard;
 import com.backend.db.mapper.IndexMapper;
@@ -15,10 +16,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,6 +35,9 @@ public class JaccardServiceImpl extends ServiceImpl<JaccardMapper, Jaccard> impl
 
     @Autowired
     BookServiceImpl bookService;
+
+    @Autowired
+    ClassmentServiceImpl classmentService;
 
 
     private ExecutorService executor = Executors.newCachedThreadPool();
@@ -55,13 +57,33 @@ public class JaccardServiceImpl extends ServiceImpl<JaccardMapper, Jaccard> impl
         return list();
     }
 
+    //order by jaccard distance
     public List<Integer> get_neighbor(Integer id){
         QueryWrapper<Jaccard> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("distance");
         List<Jaccard> list = jaccardMapper.selectList(queryWrapper);
         List<Integer> res = new ArrayList<>();
+        List<Jaccard> jacs = new ArrayList<>();
 
         for(Jaccard j : list){
+            if(j.getBook1() == id){
+                jacs.add(j);
+            }
+            if(j.getBook2() == id){
+                jacs.add(j);
+            }
+        }
+
+        Collections.sort(jacs, new Comparator<Jaccard>() {
+            @Override
+            public int compare(Jaccard o1, Jaccard o2) {
+                Double c1 = o1.getDistance();
+                Double c2 = o2.getDistance();
+                return Double.compare(c2,c1);
+            }
+        });
+
+        for(Jaccard j : jacs){
             if(j.getBook1() == id){
                 res.add(j.getBook2());
             }
@@ -69,8 +91,10 @@ public class JaccardServiceImpl extends ServiceImpl<JaccardMapper, Jaccard> impl
                 res.add(j.getBook1());
             }
         }
+
         return res;
     }
+
 
 
     public Boolean loadJaccard(List<Index> indexs) throws ExecutionException, InterruptedException{

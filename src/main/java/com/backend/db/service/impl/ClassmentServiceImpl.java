@@ -86,8 +86,8 @@ public class ClassmentServiceImpl extends ServiceImpl<ClassmentMapper, Classment
             if(jac.getDistance() > 0.7) {
                 int vet1 = books.indexOf(jac.getBook1());
                 int vet2 = books.indexOf(jac.getBook2());
-                weight[vet1][vet2] = jac.getDistance();
-                weight[vet2][vet1] = jac.getDistance();
+                weight[vet1][vet2] = 1.0 - jac.getDistance();
+                weight[vet2][vet1] = 1.0 - jac.getDistance();
             }
         }
 
