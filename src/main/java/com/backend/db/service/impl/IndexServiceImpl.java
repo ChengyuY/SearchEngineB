@@ -99,6 +99,34 @@ public class IndexServiceImpl  extends ServiceImpl<IndexMapper, Index> implement
 
     }
 
+    public List<Index> search_regex(String regex){
+        List<Index> l = list();
+        List<Index> indexs = new ArrayList<>();
+
+        for(Index i : l) {
+            if(RegEx.match(i.getWord(),regex) == true){
+                indexs.add(i);
+            }
+        }
+
+        return indexs;
+    }
+
+    public List<Index> search_kmp(String word){
+        String word1 = word.toLowerCase();
+
+        List<Index> l = list();
+        List<Index> indexs = new ArrayList<>();
+
+        for(Index i : l) {
+            if(KMP.match(i.getWord(),word) != -1){
+                indexs.add(i);
+            }
+        }
+
+        return indexs;
+    }
+
     public Future<Boolean> trans(String text,Integer id){
         return executor.submit(() -> {
             System.out.println("index: "+ id);
@@ -114,6 +142,7 @@ public class IndexServiceImpl  extends ServiceImpl<IndexMapper, Index> implement
                     return false;
                 }
             }
+            System.out.println("index: "+ id+" fini");
             return true;
         });
     }

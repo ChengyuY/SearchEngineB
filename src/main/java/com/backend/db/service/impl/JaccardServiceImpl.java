@@ -27,43 +27,75 @@ import java.util.concurrent.Future;
 @Service
 public class JaccardServiceImpl extends ServiceImpl<JaccardMapper, Jaccard> implements JaccardService {
 
+
     @Autowired
     IndexMapper indexMapper;
+
+    @Autowired
+    JaccardMapper jaccardMapper;
+
+    @Autowired
+    BookServiceImpl bookService;
 
 
     private ExecutorService executor = Executors.newCachedThreadPool();
 
 
+
     public Boolean saveIndex(Jaccard jaccard){
         Boolean b = saveOrUpdate(jaccard);
+
         if (b) {
             return Boolean.TRUE;
         }
         return Boolean.FALSE;
     }
 
+    public List<Jaccard> getAll(){
+        return list();
+    }
+
+    public List<Integer> get_neighbor(Integer id){
+        QueryWrapper<Jaccard> queryWrapper = new QueryWrapper<>();
+        queryWrapper.orderByDesc("distance");
+        List<Jaccard> list = jaccardMapper.selectList(queryWrapper);
+        List<Integer> res = new ArrayList<>();
+
+        for(Jaccard j : list){
+            if(j.getBook1() == id){
+                res.add(j.getBook2());
+            }
+            if(j.getBook2() == id){
+                res.add(j.getBook1());
+            }
+        }
+        return res;
+    }
 
 
-    public Boolean loadJaccard(List<Index> indexs,List<Book> books) throws ExecutionException, InterruptedException{
+    public Boolean loadJaccard(List<Index> indexs) throws ExecutionException, InterruptedException{
         List<Future<Boolean>> futures = new ArrayList<>();
-        List<Integer> idbooks = new ArrayList<>();
-        int nb = books.size();
-        for(Book b: books){
-            idbooks.add(b.getId());
-        }
+        List<Integer> idbooks = bookService.books_id_int();
+        int nb = idbooks.size();
 
-        List<List<Index>> indexs_by_id = new ArrayList<>();
-        for(int i = 0; i < nb ; i++){
-            QueryWrapper<Index> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("bookid",idbooks.get(i));
-            queryWrapper.orderByDesc("cpt");
-            indexs_by_id.add(indexMapper.selectList(queryWrapper));
-        }
+//        List<List<Index>> indexs_by_id = new ArrayList<>();
+//        for(int i = 0; i < nb ; i++){
+//            QueryWrapper<Index> queryWrapper = new QueryWrapper<>();
+//            queryWrapper.eq("bookid",idbooks.get(i));
+//            indexs_by_id.add(indexMapper.selectList(queryWrapper));
+//        }
 
         for(int i = 0 ; i < nb-1; i++){
+            QueryWrapper<Index> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("bookid",idbooks.get(i));
+            List<Index> i1 = indexMapper.selectList(queryWrapper);
+
             for(int j = i+1; j < nb ; j++){
-                  Future<Boolean> future = calculate(i,j,indexs_by_id,idbooks);
-                  futures.add(future);
+                QueryWrapper<Index> queryWrapper2 = new QueryWrapper<>();
+                queryWrapper2.eq("bookid",idbooks.get(j));
+                List<Index> i2 = indexMapper.selectList(queryWrapper2);
+                Future<Boolean> future = calculate(i1,i2,idbooks,i,j);
+                futures.add(future);
             }
         }
 
@@ -102,11 +134,9 @@ public class JaccardServiceImpl extends ServiceImpl<JaccardMapper, Jaccard> impl
 
 
 
-    public Future<Boolean> calculate(Integer i, Integer j, List<List<Index>> indexs_by_id,List<Integer> idbooks ) {
+    public Future<Boolean> calculate(List<Index> i1, List<Index> i2,List<Integer> idbooks,int i,int j) {
         return executor.submit(() -> {
             System.out.println(i+ " "+j+" start");
-            List<Index> i1 = indexs_by_id.get(i);
-            List<Index> i2 = indexs_by_id.get(j);
             Set<String> str = new HashSet<>();
             for(int k = 0; k < i1.size();k++){
                 str.add(i1.get(k).getWord());
@@ -119,7 +149,9 @@ public class JaccardServiceImpl extends ServiceImpl<JaccardMapper, Jaccard> impl
             jac.setBook1(idbooks.get(i));
             jac.setBook2(idbooks.get(j));
             jac.setDistance(distance);
+            System.out.println(i+ " "+j+" finish");
             return saveOrUpdate(jac);
+
         });
     }
 

@@ -3,39 +3,37 @@ package com.backend.db.controller;
 import com.backend.db.bean.Book;
 import com.backend.db.bean.Index;
 import com.backend.db.service.impl.BookServiceImpl;
+import com.backend.db.service.impl.ClassmentServiceImpl;
 import com.backend.db.service.impl.IndexServiceImpl;
 import com.backend.db.service.impl.JaccardServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+
 import java.util.List;
-import java.util.Scanner;
 
 @Validated
 @RestController
 public class BookController {
 
-    int NB_book = 5;
+    int NB_book = 100;
 
 
     @Autowired
     BookServiceImpl bookService;
     @Autowired
     IndexServiceImpl indexService;
-
     @Autowired
     JaccardServiceImpl jaccardService;
+    @Autowired
+    ClassmentServiceImpl classmentService;
 
 
     @ResponseBody
     @PostMapping("/library/load")
     public Boolean load(){
-        Boolean b = bookService.load(5);
+        Boolean b = bookService.load(NB_book);
         if(b == false){
             return  false;
         }
@@ -52,11 +50,17 @@ public class BookController {
     @PostMapping("/library/loadgraph")
     public Boolean loadgraph(){
         try{
-            jaccardService.loadJaccard(indexService.list(),bookService.books_id());
+            jaccardService.loadJaccard(indexService.list());
         }catch (Exception e){
             return false;
         }
         return true;
+    }
+
+    @ResponseBody
+    @PostMapping("/library/loadrank")
+    public Boolean loadrank(){
+          return  classmentService.load(jaccardService.getAll(),bookService.books_id_int());
     }
 
     @ResponseBody
@@ -76,5 +80,24 @@ public class BookController {
     public List<Index> searchbywordregex(@RequestParam("regex") String regex){
         return indexService.search_par_mot_regex(regex);
     }
+
+    @ResponseBody
+    @GetMapping("/library/searchbywordregex_classment")
+    public List<Index> searchbywordregex_classment(@RequestParam("regex") String regex){
+        return classmentService.search_regex_classment(regex);
+    }
+
+    @ResponseBody
+    @GetMapping("/library/searchbywordkmp_classment")
+    public List<Index> searchbywordkmp_classment(@RequestParam("word") String word){
+        return classmentService.seach_kmp_classment(word);
+    }
+
+    @ResponseBody
+    @GetMapping("/library/neighbor")
+    public List<Integer> searchbywordkmp_classment(@RequestParam("book") Integer id){
+        return jaccardService.get_neighbor(id);
+    }
+
 
 }

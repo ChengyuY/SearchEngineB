@@ -42,6 +42,15 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         return bookMapper.selectList(queryWrapper);
     }
 
+    public List<Integer> books_id_int(){
+        List<Book> b =  books_id();
+        List<Integer> res = new ArrayList<>();
+        for(Book book : b){
+            res.add(book.getId());
+        }
+        return res;
+    }
+
     public Boolean load(Integer nb){
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.getMessageConverters().set(1,new StringHttpMessageConverter(StandardCharsets.UTF_8));
@@ -70,35 +79,30 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
                 }
                 if(courant.matches("^Author: .*")){
                     author = courant.substring(7).trim();
-                }
-                if(courant.matches("^Release Date: .*")){
-                    String t = courant.split("#")[1];
-                    String t2 = t.substring(0,t.length()-1);
-                    id = Integer.valueOf(t2);
-                }
-                if(courant.matches("Contents")){
                     break;
                 }
+
             }
-            StringBuilder contents = new StringBuilder();
-            while(scan.hasNextLine()){
-                contents.append(scan.nextLine()+"\n");
-            }
-            if(id == null && title == null && author ==null){
-                return false;
+
+            if(title == null || author == null){
+                i++;
+                continue;
             }
             Book b = new Book();
             b.setTitle(title);
             b.setAuthor(author);
-            b.setId(id);
-            b.setContents(contents.toString());
+            b.setId(i);
+            b.setContents(res);
             books.add(b);
 
             i++;
             nb--;
         }
         for(Book book:books){
-            saveBook(book);
+            Boolean b =saveBook(book);
+            if(b == false){
+                return  false;
+            }
         }
         return true;
     }
