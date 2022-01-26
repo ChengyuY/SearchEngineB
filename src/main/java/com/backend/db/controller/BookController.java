@@ -11,6 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Validated
@@ -65,8 +66,13 @@ public class BookController {
 
     @ResponseBody
     @GetMapping("/library/searchbyword")
-    public List<Integer> searchbyword(@RequestParam("word") String word){
-        return indexService.search_par_mot_cle(word);
+    public List<Book> searchbyword(@RequestParam("word") String word){
+        List<Integer> idList = indexService.search_par_mot_cle(word);
+        List<Book> books = new ArrayList<>();
+        for (Integer id: idList) {
+            books.add(bookService.Bookbyid(id));
+        }
+        return books;
     }
 
     @ResponseBody
