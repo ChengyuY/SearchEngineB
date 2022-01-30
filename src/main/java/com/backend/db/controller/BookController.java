@@ -76,32 +76,49 @@ public class BookController {
     }
 
     @ResponseBody
+    @RequestMapping("/library/searchbyid")
+    public List<Book> searchbyid(@RequestParam("id") Integer id){
+        List<Book> books = new ArrayList<>();
+        books.add(bookService.Bookbyid(id));
+        return books;
+    }
+
+
+    @ResponseBody
     @GetMapping("/library/searchbywordkmp")
     public List<Index> searchbywordkmp(@RequestParam("word") String word){
-        return indexService.search_par_mot_kmp(word);
+        List<Index> res = indexService.search_par_mot_kmp(word);
+        if (res.size() > 100) return res.subList(0,100);
+        else return res;
     }
 
     @ResponseBody
     @GetMapping("/library/searchbywordregex")
     public List<Index> searchbywordregex(@RequestParam("regex") String regex){
-        return indexService.search_par_mot_regex(regex);
+        List<Index> res = indexService.search_par_mot_regex(regex);
+        if (res.size() > 100) return res.subList(0,100);
+        else return res;
     }
 
     @ResponseBody
     @GetMapping("/library/searchbywordregex_classment")
     public List<Index> searchbywordregex_classment(@RequestParam("regex") String regex){
-        return classmentService.search_regex_classment(regex);
+        List<Index> res = classmentService.search_regex_classment(regex);
+        if (res.size() > 100) return res.subList(0,100);
+        else return res;
     }
 
     @ResponseBody
     @GetMapping("/library/searchbywordkmp_classment")
     public List<Index> searchbywordkmp_classment(@RequestParam("word") String word){
-        return classmentService.seach_kmp_classment(word);
+        List<Index> res = classmentService.seach_kmp_classment(word);
+        if (res.size() > 100) return res.subList(0,100);
+        else return res;
     }
 
     @ResponseBody
     @GetMapping("/library/neighbor")
-    public List<Integer> searchbywordkmp_classment(@RequestParam("book") Integer id){
+    public List<Integer> get_suggestions(@RequestParam("book") Integer id){
         return jaccardService.get_neighbor(id);
     }
 
